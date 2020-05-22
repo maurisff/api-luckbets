@@ -1,6 +1,6 @@
-# template-backend-auth-firebase-mongodb
+# api-luckbets
 
-> Projeto de modelo para autenticação de usuarios com Firebase Auth e banco de dados NoSQL MongoDB, utilizando as tecnologias Node.JS, Express.JS e MongoDB.
+> Backend para aplicação de consulta de resultados da loterias caixa, utilizando as tecnologias Node.JS, Express.JS, Firebase e MongoDB.
 
 ## Build Setup
 

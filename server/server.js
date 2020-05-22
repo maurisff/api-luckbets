@@ -2,7 +2,6 @@ require('dotenv').config();
 require('./config/check-versions')();
 const app = require('./app');
 
-
 const port = process.env.PORT || process.env.API_PORT || 4000;
 
 console.log('> Starting dev API server...');
