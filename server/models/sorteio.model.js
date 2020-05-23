@@ -11,6 +11,7 @@ const SchemaTabela = new Schema({
   modalidadeId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Modalidade',
+    required: 'Modalidade obrigatório',
   },
   apuracao: {
     type: Date,
