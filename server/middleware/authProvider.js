@@ -33,11 +33,14 @@ module.exports = async function (req, res, next) {
         // res.status(401).json(new ResponseInfor(false, 'Usuário não cadastradao'));
         req.headers.usuarioId = usuario._id;
       }
+      if (req.path.includes('/administracao/') && (!usuario || !usuario.admin)) {
+        res.status(401).json(new ResponseInfor(false, 'Unauthorized resource!'));
+        return;
+      }
       next();
+    // eslint-disable-next-line no-unused-vars
     }).catch((err) => {
-      console.log('admin.auth().verifyIdToken().err: ', err);
       res.status(401).json(new ResponseInfor(false, 'Unauthorized'));
-      // res.status(401).json(new ResponseInfor(false, `invalid authtoken. error: ${err}`));
     });
   }
   httpLogProvider(req, res);

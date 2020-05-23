@@ -36,8 +36,8 @@ app.set('appEnv', process.env);
 // mongoose instance connection url connection
 if (process.env.MONGO_DB) {
   mongoose.Promise = global.Promise;
-  if (process.env.NODE_ENV !== 'production') {
-    // mongoose.set('debug', true);
+  if (process.env.NODE_ENV !== 'production' && !!process.env.DEBUG_MODE) {
+    mongoose.set('debug', true);
   }
   mongoose.set('useCreateIndex', true);
   mongoose.connect(process.env.MONGO_DB, global.App.dbConfig)

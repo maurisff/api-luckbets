@@ -1,3 +1,4 @@
+/* eslint-disable radix */
 
 const moment = require('moment-timezone');
 
@@ -170,13 +171,87 @@ exports.postVerificaSorteio = async (req, res) => {
   }
 };
 
-exports.list = async (req, res) => {
+exports.ultimosResultados = async (req, res) => {
   try {
-    let result = [];
-    result = await sorteioRepository.selectByFilter({}, req.query);
+    const modalidades = await modalidadeRepository.listarTodos();
+    const result = [];
+    await global.util.asyncForEach(modalidades, async (modalidade) => {
+      try {
+        const sorteio = await sorteioRepository.ultimoResultado(modalidade._id);
+        console.log('sorteio', sorteio);
+        if (sorteio) {
+          await result.push(sorteio);
+        }
+      } catch (error) {
+        console.log(`ultimosResultados - Modalidade (${modalidade.codigo}) error: `, error);
+      }
+    });
     res.status(200).json(new ResponseInfor(true, result));
   } catch (error) {
     res.status(400).json(new ResponseInfor(false, error));
+  }
+};
+
+exports.resultadoModalidade = async (req, res) => {
+  try {
+    const { codigo } = req.params;
+    let { concurso, rowsPage = 0, page = 1 } = req.query;
+
+    if (concurso) {
+      concurso = parseInt(concurso);
+    }
+    if (rowsPage) {
+      rowsPage = parseInt(rowsPage);
+    }
+    if (page) {
+      page = parseInt(page);
+    }
+    let rows = 0;
+    if (!codigo) {
+      res.status(400).json(new ResponseInfor(false, ''));
+      return;
+    }
+    const modalidade = await modalidadeRepository.getOne({ codigo: codigo.toUpperCase() });
+
+    if (!modalidade) {
+      res.status(400).json(new ResponseInfor(false, ''));
+      return;
+    }
+    if (concurso) {
+      rows = await sorteioRepository.countByFilter({ modalidadeId: modalidade._id, concurso });
+    } else {
+      rows = await sorteioRepository.countByFilter({ modalidadeId: modalidade._id });
+    }
+    if (!rows || Number.isNaN(rows)) {
+      rows = 0;
+    }
+    rows = parseInt(rows);
+    if (rowsPage <= 0) {
+      rowsPage = rows;
+    }
+    let totalPages = Math.ceil((parseInt(rows) / rowsPage));
+    totalPages = (totalPages === 0 ? 1 : totalPages);
+    res.header('X-Total-Rows', rows);
+    res.header('X-Rows-Page', rowsPage);
+    res.header('X-Page', page);
+    res.header('X-Total-Pages', totalPages);
+    if (rows <= 0) {
+      res.status(200).json(new ResponseInfor(true, []));
+      return;
+    }
+    let options = {
+      limit: rowsPage,
+      skip: (((page - 1) * rowsPage)),
+    };
+
+    if (concurso) {
+      options = { filter: { concurso }, ...options };
+    }
+
+    const result = await sorteioRepository.resultadoModalidade(modalidade._id, options);
+    res.status(200).json(new ResponseInfor(true, result));
+  } catch (error) {
+    res.status(400).json(new ResponseInfor(false, error.message));
   }
 };
 

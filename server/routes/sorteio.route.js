@@ -1,12 +1,15 @@
 
 module.exports = (app) => {
   const sorteioController = require('../controllers/sorteio.controller');
-  app.route('/sorteios/resultados')
-    .get(sorteioController.list);
+  app.route('/sorteios/ultimosresultados')
+    .get(sorteioController.ultimosResultados);
 
-  app.route('/sorteios/semresultado')
+  app.route('/sorteios/:codigo/resultado')
+    .get(sorteioController.resultadoModalidade);
+
+  app.route('/administracao/sorteios/semresultado')
     .get(sorteioController.semSorteio);
 
-  app.route('/sorteios/buscaresultado')
+  app.route('/administracao/sorteios/buscaresultado')
     .post(sorteioController.postVerificaSorteio);
 };
