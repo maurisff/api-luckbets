@@ -44,7 +44,11 @@ const SchemaTabela = new Schema({
   },
   dtConferencia: {
     type: Date,
-  }, // Add grupo Bolão
+  },
+  bolaoId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Bolao',
+  },
   createdAt: {
     type: Date,
     default: Date.now,
