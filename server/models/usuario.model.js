@@ -35,5 +35,4 @@ const SchemaTabela = new Schema({
   },
 });
 SchemaTabela.index({ email: 1 }, { unique: true });
-SchemaTabela.index({ uid: 1 }, { unique: true });
 module.exports = mongoose.model('Usuario', SchemaTabela);

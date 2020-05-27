@@ -19,6 +19,8 @@ const SchemaTabela = new Schema({
         type: [String],
         required: 'resultado obrigatório',
       },
+      cota: Number,
+      cotas: Number,
       acertos: Number,
     }],
   },
