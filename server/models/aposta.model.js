@@ -35,10 +35,12 @@ const SchemaTabela = new Schema({
   usuarioCotaId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Usuario',
+    required: 'Usuário da Cota obrigatório',
   },
   usuarioId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Usuario',
+    required: 'Usuário do Lançamento obrigatório',
   },
   conferido: {
     type: Boolean,

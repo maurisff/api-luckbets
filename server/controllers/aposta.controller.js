@@ -132,7 +132,7 @@ exports.create = async (req, res) => {
       res.status(200).json(new ResponseInfo(false, error.message));
       return;
     }
-
+    const apostas = [];
     const bolaoId = Bolao ? Bolao._id : null;
     const totalCotas = participantesBolao.map((p) => p.cota).reduce((a, b) => a + b);
     await global.util.asyncForEach(participantesBolao, async (participante) => {
@@ -147,130 +147,21 @@ exports.create = async (req, res) => {
           usuarioId: req.headers.usuarioId,
           bolaoId,
         };
-        try {
-          const Aposta = await apostaRepository.create(aposta);
-          eventEmitter({ id: Aposta._id });
-        } catch (error) {
-          console.log('apostaRepository.create - Error: ', error);
-        }
+        apostas.push(aposta);
       });
+    });
+
+    await global.util.asyncForEach(apostas, async (aposta) => {
+      try {
+        const Aposta = await apostaRepository.create(aposta);
+        eventEmitter({ id: Aposta._id });
+      } catch (error) {
+        console.log('apostaRepository.create - Error: ', error);
+      }
     });
     res.status(200).json(new ResponseInfo(true, 'success'));
   } catch (error) {
     console.error('Create aposta - Error: ', error);
-    res.status(500).json(new ResponseInfo(false, error));
-  }
-};
-
-exports.update = async (req, res) => {
-  try {
-    if (!req.body) {
-      res.status(200).json(new ResponseInfo(false, 'Objeto (Dados) não foi informado!'));
-      return;
-    }
-    if (!(typeof req.body === 'object')) {
-      res.status(200).json(new ResponseInfo(false, 'Objeto (Dados) não é um objeto validado'));
-      return;
-    }
-    const concursos = [];
-    const participantesBolao = [];
-    const {
-      modalidade, concurso, teimosinha, jogos, bolao,
-    } = req.body;
-    const { bolaoId, participantes } = bolao;
-    const Bolao = await bolaoRepository.get(bolaoId);
-    const Modalidade = await modalidadeRepository.getOne({ cidigo: modalidade.toString() });
-    if (!Modalidade) {
-      res.status(200).json(new ResponseInfo(false, `Modalidade (${modalidade}) não cadastrada!`));
-      return;
-    }
-    if (!concurso) {
-      res.status(200).json(new ResponseInfo(false, 'Concurso não informado!'));
-      return;
-    }
-    if (!jogos || !Array.isArray(jogos) || jogos.length === 0) {
-      res.status(200).json(new ResponseInfo(false, 'Jogos não informados!'));
-      return;
-    }
-    if (participantes && !Array.isArray(participantes)) {
-      res.status(200).json(new ResponseInfo(false, 'Participantes invalidos!'));
-      return;
-    }
-    concursos.push(concurso);
-    if (teimosinha && teimosinha > 0) {
-      for (let i = 1; i < teimosinha; i++) {
-        concursos.push((concurso + i));
-      }
-    }
-
-    if (participantes) {
-      await global.util.asyncForEach(participantes, async (participante) => {
-        const {
-          email, nome, usuarioId, cotas = 1,
-        } = participante;
-        let p = null;
-        if (usuarioId) {
-          p = await usuarioRepository.get(usuarioId);
-        } else {
-          p = await usuarioRepository.getOne({ email: email.toLowerCase() });
-        }
-        if (!p && email && nome) {
-          const u = {
-            email,
-            nome,
-          };
-          p = await usuarioRepository.create(u);
-        }
-        if (p) {
-          participantesBolao.push({ participante: p._id, cota: cotas });
-        }
-      });
-    }
-
-    if (participantesBolao.length > 0) {
-      const concursoFinal = concursos.reduce((a, b) => Math.max(a, b));
-      if (!Bolao) {
-        Bolao = await bolaoRepository.create({
-          modalidadeId: Modalidade._id,
-          concurso,
-          concursoFinal,
-          participantes: participantesBolao,
-        });
-      } else {
-        Bolao = await bolaoRepository.update(Bolao._id, {
-          modalidadeId: Modalidade._id,
-          concurso,
-          concursoFinal,
-          participantes: participantesBolao,
-        });
-      }
-    } else {
-      participantesBolao.push({ participante: req.headers.usuarioId, cota: 1 });
-    }
-
-    res.status(200).json(new ResponseInfo(true, data));
-  } catch (error) {
-    res.status(500).json(new ResponseInfo(false, error));
-  }
-};
-
-exports.update = async (req, res) => {
-  try {
-    if (!req.params.id) {
-      res.status(200).json(new ResponseInfo(false, 'Id do Objeto (Dados) não foi informado.'));
-    } else if (!req.body) {
-      res.status(200).json(new ResponseInfo(false, 'Objeto (Dados) não foi informado.'));
-    } else if (!(typeof req.body === 'object')) {
-      res.status(200).json(new ResponseInfo(false, 'Objeto (Dados) não é um objeto validado'));
-    } else {
-      const data = await apostaRepository.update(req.params.id, req.body);
-      if (data) {
-        res.status(200).json(new ResponseInfo(true, data));
-      } else {
-        res.status(200).json(new ResponseInfo(false, `Objeto (Dados), id (${req.params.id}) não encontrato ou não atualizado.`));
-      }
-    }
-  } catch (error) {
     res.status(500).json(new ResponseInfo(false, error));
   }
 };
@@ -280,8 +171,9 @@ exports.get = async (req, res) => {
     if (!req.params.id) {
       res.status(200).json(new ResponseInfo(false, 'Id do Objeto não foi informado.'));
     } else {
-      const data = await repository.get(req.params.id);
-      if (data) {
+      const data = await apostaRepository.get(req.params.id);
+      const valido = (req.headers && req.headers.usuarioId && req.headers.usuarioId.toString() === data.usuarioCotaId.toString());
+      if (data && valido) {
         res.status(200).json(new ResponseInfo(true, data));
       } else {
         res.status(200).json(new ResponseInfo(false, `Objeto, id (${req.params.id}) não encontrato`));
@@ -297,8 +189,14 @@ exports.delete = async (req, res) => {
     if (!req.params.id) {
       res.status(200).json(new ResponseInfo(false, 'Id do Objeto não foi informado.'));
     } else {
-      await repository.delete(req.params.id);
-      res.status(200).json(new ResponseInfo(true, `Id (${req.params.id}) Excluido com sucesso.`));
+      const data = await apostaRepository.get(req.params.id);
+      const valido = (req.headers && req.headers.usuarioId && data && req.headers.usuarioId.toString() === data.usuarioCotaId.toString());
+      if (valido) {
+        await apostaRepository.delete(data._id);
+        res.status(200).json(new ResponseInfo(true, `Id (${req.params.id}) Excluido com sucesso.`));
+      } else {
+        res.status(200).json(new ResponseInfo(false, `Id (${req.params.id}) não encontrato`));
+      }
     }
   } catch (error) {
     res.status(500).json(new ResponseInfo(false, error));
@@ -307,12 +205,9 @@ exports.delete = async (req, res) => {
 
 exports.list = async (req, res) => {
   try {
-    let result = [];
-    if (req.query && Object.keys(req.query).length > 0) {
-      result = await repository.listarByFilter(req.query);
-    } else {
-      result = await repository.listarTodos();
-    }
+    const { usuarioCotaId = '' } = req.headers;
+    const filter = req.query && Object.keys(req.query).length > 0 ? req.query : {};
+    const result = await apostaRepository.listarByFilter({ usuarioCotaId, ...filter });
     res.status(200).json(new ResponseInfo(true, result));
   } catch (error) {
     res.status(500).json(new ResponseInfo(false, error));
