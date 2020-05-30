@@ -10,11 +10,11 @@ const sorteioRepository = require('../repositories/sorteio.repository');
 const ResponseInfo = require('../util/ResponseInfo');
 const globalEvents = require('../helper/globalEvents');
 
-
+/*
 globalEvents.on('novo-sorteio', (event) => {
-  console.warn('onEvent-novo-sorteio: ', JSON.stringify(event));
+  // console.warn('onEvent-novo-sorteio: ', JSON.stringify(event));
 });
-
+*/
 async function eventEmitter(sorteio) {
   globalEvents.emit('novo-sorteio', sorteio);
 }
@@ -83,7 +83,7 @@ async function consultaSorteio(modalidadeId, options = {
         concurso: data[modalidade.propriedades.concurso],
         modalidadeId: modalidade._id,
         apuracao: (moment(data[modalidade.propriedades.dataConcurso]).isValid() ? moment(data[modalidade.propriedades.dataConcurso]) : null),
-        resultado: (data[modalidade.propriedades.resultado] || '').replace(/\s+/g, '').split('-'),
+        resultado: (data[modalidade.propriedades.resultado] || '').replace(/\s+/g, '').split('-').map((d) => parseInt(d)),
         proximoConcurso: (data[modalidade.propriedades.concurso] + 1),
         proximaApuracao: (moment(data[modalidade.propriedades.dataProximo]).isValid() ? moment(data[modalidade.propriedades.dataProximo]) : null),
         valorPrevisto: parseFloat(data[modalidade.propriedades.valorPrevisto]),
@@ -99,10 +99,10 @@ async function consultaSorteio(modalidadeId, options = {
       // console.warn(`Modadelidade (${modalidade.codigo}) - JSON resultado: `, JSON.stringify(resultado));
       if (!sorteio) {
         await sorteioRepository.create(resultado);
-        notifica = { concurso: resultado.concurso, modaidedadeId: resultado.modalidadeId };
+        notifica = { concurso: resultado.concurso, modalidadeId: resultado.modalidadeId };
       } else if (sorteio && forceUpdate) {
         await sorteioRepository.update(sorteio._id, resultado);
-        notifica = { concurso: resultado.concurso, modaidedadeId: resultado.modalidadeId };
+        notifica = { concurso: resultado.concurso, modalidadeId: resultado.modalidadeId };
       }
       if (!modalidade.proximoConcurso || (resultado.concurso >= modalidade.proximoConcurso)) {
         modalidade.ultimoConcurso = resultado.concurso;

@@ -18,11 +18,11 @@ const SchemaTabela = new Schema({
     required: 'apuracao obrigatória',
   },
   resultado: {
-    type: [String],
+    type: [Number],
     required: 'resultado obrigatório',
   },
   resultado2: {
-    type: String,
+    type: [Number],
   },
   premiacao: {
     type: [{

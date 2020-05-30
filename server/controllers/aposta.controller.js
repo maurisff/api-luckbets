@@ -1,6 +1,6 @@
 /* eslint-disable radix */
 
-const moment = require('moment-timezone');
+const firebaseHelper = require('../helper/firebase');
 
 const modalidadeRepository = require('../repositories/modalidade.repository');
 const sorteioRepository = require('../repositories/sorteio.repository');
@@ -11,13 +11,85 @@ const ResponseInfo = require('../util/ResponseInfo');
 const globalEvents = require('../helper/globalEvents');
 
 
-globalEvents.on('novo-jogo', (event) => {
-  console.warn('onEvent-novo-jogo: ', JSON.stringify(event));
-});
-
-async function eventEmitter(sorteio) {
-  globalEvents.emit('novo-jogo', sorteio);
+async function eventEmitter(event) {
+  globalEvents.emit('novo-jogo', event);
 }
+
+async function confereAposta(modalidadeId, apostaId, options = { atualiza: false }) {
+  try {
+    const { atualiza } = options;
+    const modalidade = await modalidadeRepository.get(modalidadeId);
+    if (!modalidade) {
+      throw new Error(`modalidade não encontrada para o ID (${modalidadeId})`);
+    }
+    const aposta = await apostaRepository.get(apostaId);
+    if (!aposta) {
+      throw new Error(`Aposta não encontrada para o ID (${apostaId})`);
+    }
+    if (aposta.conferido && !atualiza) {
+      return;
+    }
+    const sorteio = await sorteioRepository.getOne({ modalidadeId, concurso: aposta.concurso });
+    if (!sorteio) {
+      return;
+    }
+    const { resultado } = sorteio;
+    for (let index = 0; index < aposta.jogos.length; index++) {
+      const jogo = aposta.jogos[index];
+      const qtDezenas = jogo.dezenas.length;
+      jogo.dezenasConferidas = jogo.dezenas.filter((d) => resultado.indexOf(d) !== -1);
+      jogo.acertos = jogo.dezenasConferidas.length;
+      jogo.acertosFaixa = [];
+
+      const faixaPremiacao = modalidade.faixaPremio.find((f) => f.dezenas === jogo.acertos);
+      const faixaSorteio = sorteio.premiacao.find((f) => f.dezenas === jogo.acertos);
+      if (faixaPremiacao) {
+        if (qtDezenas > modalidade.minDezenas && faixaPremiacao.tabelaPremiacao && faixaPremiacao.tabelaPremiacao.length > 0 && faixaSorteio && faixaSorteio.ganhadores > 0) {
+          /** mauricio.sff 28/05/2020
+           * O calculo da faixa de premio depende da tabela de Acertos disponilizado pela Caixa, que ainda não foi implementado.       *
+           */
+        } else if (faixaSorteio && faixaSorteio.ganhadores > 0) {
+          jogo.acertosFaixa.push({
+            faixa: faixaSorteio.faixa,
+            acertos: 1,
+            valor: ((faixaSorteio.valor / ((jogo.cotas || 0) === 0 ? 1 : jogo.cotas)) * jogo.cota),
+          });
+        }
+      }
+      aposta.jogos[index] = jogo;
+    }
+    // const jogosPremiados = aposta.jogos.map((j) => (j.acertos || 0)).reduce((a, b) => a + b);
+    // const jogosPremiados = aposta.jogos.map((j) => (j.acertosFaixa && j.acertosFaixa.length > 0 ? j.acertosFaixa.map((f) => (f.acertos || 0)).reduce((a, b) => a + b) : 0)).reduce((a, b) => a + b) || 0;
+    const jogosPremiados = aposta.jogos.map((j) => ((j.acertos && sorteio.premiacao.map((p) => p.dezenas).indexOf(j.acertos) !== -1) ? 1 : 0)).reduce((a, b) => a + b) || 0;
+    const valorPremio = aposta.jogos.map((j) => (j.acertosFaixa && j.acertosFaixa.length > 0 ? j.acertosFaixa.map((f) => (f.valor || 0)).reduce((a, b) => a + b) : 0)).reduce((a, b) => a + b) || 0;
+    aposta.vlPremio = ((valorPremio / ((aposta.totalCotas || 0) === 0 ? 1 : aposta.totalCotas)) * aposta.cotas);
+    aposta.conferido = true;
+    aposta.dtConferencia = new Date();
+
+    await apostaRepository.update(aposta._id, aposta);
+
+    // notification = { title = '', body = '', icon = '', url = '', actions = ''}
+
+    if (aposta.vlPremio > 0) {
+      const notification = {
+        title: 'Parabéns!',
+        body: `Sua aposta da ${modalidade.titulo} foi premiada. Valor ${(aposta.vlPremio || 0).toStringPrice()}.\nProcure uma agência da Caixa para verificar o valor exato do seu prêmio!`,
+        icon: `${modalidade.codigo.toLowerCase()}.png`,
+      };
+      firebaseHelper.sendNotificationToUser(aposta.usuarioCotaId, notification);
+    } else if (jogosPremiados > 0) {
+      const notification = {
+        title: 'Parabéns!',
+        body: `Sua aposta da ${modalidade.titulo} foi premiada, Valor não confirmado.\nProcure uma agência da Caixa para verificar o valor exato do seu prêmio!`,
+        icon: `${modalidade.codigo.toLowerCase()}.png`,
+      };
+      firebaseHelper.sendNotificationToUser(aposta.usuarioCotaId, notification);
+    }
+  } catch (error) {
+    console.error('confereAposta-Erro: ', error);
+  }
+}
+
 
 exports.create = async (req, res) => {
   try {
@@ -95,7 +167,7 @@ exports.create = async (req, res) => {
     } else {
       participantesBolao.push({ participante: req.headers.usuarioId, cota: 1 });
     }
-    if (participantesBolao.map((p) => p.toString()).indexOf((req.headers.usuarioId).toString()) === -1) {
+    if (participantesBolao.map((p) => p.participante.toString()).indexOf((req.headers.usuarioId).toString()) === -1) {
       participantesBolao.push({ participante: req.headers.usuarioId, cota: 1 });
     }
 
@@ -166,6 +238,25 @@ exports.create = async (req, res) => {
   }
 };
 
+
+exports.confereAposta = async (req, res) => {
+  try {
+    if (!req.body) {
+      res.status(200).json(new ResponseInfo(false, 'Objeto (Dados) não foi informado!'));
+      return;
+    }
+    if (!(typeof req.body === 'object')) {
+      res.status(200).json(new ResponseInfo(false, 'Objeto (Dados) não é um objeto validado'));
+      return;
+    }
+    res.status(200).json(new ResponseInfo(true, 'success'));
+  } catch (error) {
+    console.error('Create aposta - Error: ', error);
+    res.status(500).json(new ResponseInfo(false, error));
+  }
+};
+
+
 exports.get = async (req, res) => {
   try {
     if (!req.params.id) {
@@ -205,11 +296,84 @@ exports.delete = async (req, res) => {
 
 exports.list = async (req, res) => {
   try {
-    const { usuarioCotaId = '' } = req.headers;
-    const filter = req.query && Object.keys(req.query).length > 0 ? req.query : {};
-    const result = await apostaRepository.listarByFilter({ usuarioCotaId, ...filter });
-    res.status(200).json(new ResponseInfo(true, result));
+    const { usuarioId = '' } = req.headers;
+    const { codigo } = req.params;
+    let { concurso, rowsPage = 0, page = 1 } = req.query;
+    let filter = {};
+
+    if (concurso) {
+      concurso = parseInt(concurso);
+    }
+    if (rowsPage) {
+      rowsPage = parseInt(rowsPage);
+    }
+    if (page) {
+      page = parseInt(page);
+    }
+    if (!codigo) {
+      res.status(400).json(new ResponseInfo(false, ''));
+      return;
+    }
+    const modalidade = await modalidadeRepository.getOne({ codigo: codigo.toUpperCase() });
+
+    if (!modalidade) {
+      res.status(400).json(new ResponseInfo(false, ''));
+      return;
+    }
+
+    if (concurso) {
+      filter = { concurso, ...filter };
+    }
+
+    let rows = await apostaRepository.countByFilter(modalidade._id, usuarioId, filter);
+    if (!rows || Number.isNaN(rows)) {
+      rows = 0;
+    }
+    rows = parseInt(rows);
+    if (rowsPage <= 0) {
+      rowsPage = rows;
+    }
+    let totalPages = Math.ceil((parseInt(rows) / rowsPage));
+    totalPages = (totalPages === 0 ? 1 : totalPages);
+    res.header('X-Total-Rows', rows);
+    res.header('X-Rows-Page', rowsPage);
+    res.header('X-Page', page);
+    res.header('X-Total-Pages', totalPages);
+
+    const pagination = {
+      totalRows: rows,
+      rowsPage,
+      page,
+      totalPages,
+    };
+
+    if (rows <= 0) {
+      res.status(200).json(new ResponseInfo(true, [], pagination));
+      return;
+    }
+
+    const options = {
+      filter,
+      limit: rowsPage,
+      skip: (((page - 1) * rowsPage)),
+    };
+    const result = await apostaRepository.apostasUsuario(modalidade._id, usuarioId, options);
+    res.status(200).json(new ResponseInfo(true, result, pagination));
   } catch (error) {
     res.status(500).json(new ResponseInfo(false, error));
   }
 };
+
+
+globalEvents.on('novo-sorteio', async (event) => {
+  const apostas = await apostaRepository.listarByFilter({ conferido: { $eq: false }, ...event });
+  apostas.forEach((aposta) => {
+    confereAposta(aposta.modalidadeId, aposta._id);
+  });
+});
+globalEvents.on('novo-jogo', async (event) => {
+  const aposta = await apostaRepository.get(event.id);
+  if (aposta) {
+    confereAposta(aposta.modalidadeId, aposta._id);
+  }
+});

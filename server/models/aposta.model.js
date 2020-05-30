@@ -16,12 +16,28 @@ const SchemaTabela = new Schema({
   jogos: {
     type: [{
       dezenas: {
-        type: [String],
-        required: 'resultado obrigatório',
+        type: [Number],
+        required: 'dezenas obrigatórias',
       },
-      cota: Number,
-      cotas: Number,
+      cota: {
+        type: Number,
+        default: 1,
+      },
+      cotas: {
+        type: Number,
+        default: 1,
+      },
       acertos: Number,
+      dezenasConferidas: {
+        type: [Number],
+      },
+      acertosFaixa: {
+        type: [{
+          faixa: Number,
+          acertos: Number,
+          valor: Number,
+        }],
+      },
     }],
   },
   cotas: {
@@ -31,6 +47,14 @@ const SchemaTabela = new Schema({
   totalCotas: {
     type: Number,
     default: 1,
+  },
+  vlCustoAposta: {
+    type: Number,
+    default: 0,
+  },
+  vlPremiado: {
+    type: Number,
+    default: 0,
   },
   usuarioCotaId: {
     type: mongoose.Schema.Types.ObjectId,
