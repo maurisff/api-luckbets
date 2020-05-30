@@ -20,3 +20,10 @@ exports.listarByFilter = async (filter) => Model.find(filter);
 exports.countByFilter = async (filter) => Model.countDocuments(filter);
 
 exports.selectByFilter = async (fields = null, filter = null) => Model.find((filter || {})).select((fields || {}));
+
+exports.getBolaoEmail = async (id) => Model.findById(id)
+  .select('-__v -updateAt')
+  .populate({
+    path: 'participantes.participante',
+    select: '-_id email nome',
+  });

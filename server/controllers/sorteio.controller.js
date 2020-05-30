@@ -178,12 +178,11 @@ exports.ultimosResultados = async (req, res) => {
     await global.util.asyncForEach(modalidades, async (modalidade) => {
       try {
         const sorteio = await sorteioRepository.ultimoResultado(modalidade._id);
-        console.log('sorteio', sorteio);
         if (sorteio) {
-          await result.push(sorteio);
+          result.push(sorteio);
         }
       } catch (error) {
-        console.log(`ultimosResultados - Modalidade (${modalidade.codigo}) error: `, error);
+        console.error(`ultimosResultados - Modalidade (${modalidade.codigo}) error: `, error);
       }
     });
     res.status(200).json(new ResponseInfo(true, result));

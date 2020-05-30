@@ -21,7 +21,7 @@ const SchemaTabela = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Usuario',
       },
-      quota: Number,
+      cota: Number,
     }],
   },
   createdAt: {

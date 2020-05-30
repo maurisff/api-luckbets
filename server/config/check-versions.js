@@ -35,7 +35,7 @@ if (shell.which('npm')) {
   });
 }
 
-module.exports = () => {
+module.exports = async () => {
   const warnings = [];
   for (let i = 0; i < versionRequirements.length; i++) {
     const mod = versionRequirements[i];
@@ -57,6 +57,15 @@ module.exports = () => {
   }
   if (process.env.FIREBASE_JSON_CONFIG && !IsJsonString(process.env.FIREBASE_JSON_CONFIG)) {
     warnings.push(`env.FIREBASE_JSON_CONFIG: ${chalk.white.bgRed.bold('The Firebase configuration keys are not in a valid JSON object format')}`);
+  }
+  if (!process.env.EMAIL_SERVICE && (!process.env.EMAIL_SMTP_HOST || !process.env.EMAIL_SMTP_PORT || !process.env.EMAIL_SMTP_SECURE)) {
+    warnings.push(`env.FEMAIL_SMTP_...: ${chalk.white.bgRed.bold('Required configuration HOST SMTP for sending emails. [env.EMAIL_SMTP_HOST, env.EMAIL_SMTP_PORT, EMAIL_SMTP_SECURE]')}`);
+  }
+  if (!process.env.EMAIL_USER) {
+    warnings.push(`env.EMAIL_USER: ${chalk.white.bgRed.bold("Email User isn't defined for sending emails.")}`);
+  }
+  if (!process.env.EMAIL_PASSWORD) {
+    warnings.push(`env.EMAIL_PASSWORD: ${chalk.white.bgRed.bold("Email Password isn't defined for sending emails.")}`);
   }
 
   if (warnings.length) {

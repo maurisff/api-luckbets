@@ -1,6 +1,7 @@
 /* eslint-disable radix */
 
 const firebaseHelper = require('../helper/firebase');
+const emailHelper = require('../helper/emailHelper');
 const modalidadeRepository = require('../repositories/modalidade.repository');
 const sorteioRepository = require('../repositories/sorteio.repository');
 const apostaRepository = require('../repositories/aposta.repository');
@@ -10,8 +11,8 @@ const ResponseInfo = require('../util/ResponseInfo');
 const globalEvents = require('../helper/globalEvents');
 
 
-async function eventEmitter(event) {
-  globalEvents.emit('novo-jogo', event);
+async function eventEmitter(name, event) {
+  globalEvents.emit(name, event);
 }
 
 async function confereAposta(modalidadeId, apostaId, options = { atualiza: false }) {
@@ -91,6 +92,60 @@ async function confereAposta(modalidadeId, apostaId, options = { atualiza: false
 }
 
 
+async function enviaEmailBolao(bolaoId) {
+  try {
+    const bolao = await bolaoRepository.getBolaoEmail(bolaoId);
+    if (!bolao) {
+      return;
+    }
+    console.log('bolao:', bolao);
+    console.log('0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000');
+    console.log('bolaoJSON:', JSON.stringify(bolao));
+    console.log('Enviando email Bolao ...');
+    const modalidade = await modalidadeRepository.get(bolao.modalidadeId);
+    if (!modalidade) {
+      throw new Error(`modalidade não encontrada para o ID (${bolao.modalidadeId})`);
+    }
+    const aposta = await apostaRepository.getOne({ bolaoId });
+    if (!aposta) {
+      throw new Error(`Aposta não encontrada nenhuma aposta para o Bolao com ID (${bolaoId})`);
+    }
+    const usuarioBolao = await usuarioRepository.get(aposta.usuarioId);
+    const Titulo = `Novo Bolão ${modalidade.titulo}`;
+
+    const jogos = aposta.jogos.map((j) => j.dezenas.join('-'));
+    const participantes = bolao.participantes.map((p) => ({ cota: p.cota, email: p.participante.email, nome: p.participante.nome })); //  [1, 2, 3, 4]; // busca os participantes do bolado [nome e email]
+
+    let texto = `Olá #PARTICIPANTE#, voçê está participando do bolão da ${modalidade.titulo}!`;
+    texto += `\n${bolao.concurso && bolao.concursoFinal && bolao.concurso !== bolao.concursoFinal ? `Concurso: ${bolao.concurso} até ${bolao.concursoFinal}` : `Concurso: ${bolao.concurso}`}`;
+    texto += `\nCotas: #COTA# de ${participantes.map((p) => (p.cota || 0)).reduce((a, b) => a + b)}`;
+    texto += `\nAdministrado por: ${usuarioBolao.nome && usuarioBolao.email ? `${usuarioBolao.nome} <${usuarioBolao.email}>` : `${usuarioBolao.email}`}`;
+    texto += '\nDezenas:';
+    texto += `\n${jogos.join('\n')}`;
+    texto += '\n\nParticipantes do Bolão:';
+    texto += '\n#ARR_PARTICIPANTES#'; // Monta o nome e email do particilante "Nome <email> || email"
+    texto += '\n\n\nCruse os dedos e boa sorte!!';
+
+
+    participantes.forEach(async (participante) => {
+      const emailParticipantes = participantes.map((p) => ({ nome: p.nome, email: p.email })).filter((p) => p.email !== participante.email).map((p) => (p.nome && p.email ? `${p.nome} <${p.email}>` : `${p.email}`)); // remove o usuario que vai receber o email
+
+      const body = texto.replace('#PARTICIPANTE#', (participante.nome || 'Participante')).replace('#COTA#', (participante.cota || 1)).replace('#ARR_PARTICIPANTES#', emailParticipantes.join('\n'));
+      // config = { from, to, cc, bcc, subject, body, htmlBody }
+      const config = {
+        from: `${usuarioBolao.nome && usuarioBolao.email ? `"${usuarioBolao.nome}" <${usuarioBolao.email}>` : `${usuarioBolao.email}`}`,
+        to: `${participante.nome && participante.email ? `"${participante.nome}" <${participante.email}>` : `${participante.email}`}`,
+        subject: Titulo,
+        body,
+      };
+      await emailHelper.sendEmail(config);
+    });
+  } catch (error) {
+    console.error('enviaEmailBolao-Erro: ', error);
+  }
+}
+
+
 exports.create = async (req, res) => {
   try {
     if (!req.body) {
@@ -135,7 +190,7 @@ exports.create = async (req, res) => {
     if (participantes) {
       await global.util.asyncForEach(participantes, async (participante) => {
         const {
-          email, nome, usuarioId, cotas = 1,
+          email, nome, usuarioId, cota = 1,
         } = participante;
         let p = null;
         if (usuarioId) {
@@ -151,7 +206,7 @@ exports.create = async (req, res) => {
           p = await usuarioRepository.create(u);
         }
         if (p) {
-          participantesBolao.push({ participante: p._id, cota: cotas });
+          participantesBolao.push({ participante: p._id, cota });
         }
       });
     }
@@ -226,11 +281,14 @@ exports.create = async (req, res) => {
     await global.util.asyncForEach(apostas, async (aposta) => {
       try {
         const Aposta = await apostaRepository.create(aposta);
-        eventEmitter({ id: Aposta._id });
+        eventEmitter('nova-aposta', { id: Aposta._id });
       } catch (error) {
         console.log('apostaRepository.create - Error: ', error);
       }
     });
+    if (bolaoId) {
+      eventEmitter('novo-bolao', { id: bolaoId });
+    }
     res.status(200).json(new ResponseInfo(true, 'success'));
   } catch (error) {
     console.error('Create aposta - Error: ', error);
@@ -369,14 +427,25 @@ exports.list = async (req, res) => {
 
 
 globalEvents.on('novo-sorteio', async (event) => {
+  // event => { concurso: resultado.concurso, modalidadeId: resultado.modalidadeId };
   const apostas = await apostaRepository.listarByFilter({ conferido: { $eq: false }, ...event });
   apostas.forEach((aposta) => {
     confereAposta(aposta.modalidadeId, aposta._id);
   });
 });
-globalEvents.on('novo-jogo', async (event) => {
+
+globalEvents.on('nova-aposta', async (event) => {
+  // event => { id: apostaId }
   const aposta = await apostaRepository.get(event.id);
   if (aposta) {
     confereAposta(aposta.modalidadeId, aposta._id);
+  }
+});
+
+
+globalEvents.on('novo-bolao', async (event) => {
+  // event => { id: bolaoId }
+  if (event.id) {
+    enviaEmailBolao(event.id);
   }
 });
