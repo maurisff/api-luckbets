@@ -52,6 +52,10 @@ const SchemaTabela = new Schema({
     type: Number,
     default: 0,
   },
+  premiado: {
+    type: Boolean,
+    default: false,
+  },
   vlPremiado: {
     type: Number,
     default: 0,

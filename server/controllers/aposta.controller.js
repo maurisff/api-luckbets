@@ -1,7 +1,6 @@
 /* eslint-disable radix */
 
 const firebaseHelper = require('../helper/firebase');
-
 const modalidadeRepository = require('../repositories/modalidade.repository');
 const sorteioRepository = require('../repositories/sorteio.repository');
 const apostaRepository = require('../repositories/aposta.repository');
@@ -62,7 +61,8 @@ async function confereAposta(modalidadeId, apostaId, options = { atualiza: false
     // const jogosPremiados = aposta.jogos.map((j) => (j.acertosFaixa && j.acertosFaixa.length > 0 ? j.acertosFaixa.map((f) => (f.acertos || 0)).reduce((a, b) => a + b) : 0)).reduce((a, b) => a + b) || 0;
     const jogosPremiados = aposta.jogos.map((j) => ((j.acertos && sorteio.premiacao.map((p) => p.dezenas).indexOf(j.acertos) !== -1) ? 1 : 0)).reduce((a, b) => a + b) || 0;
     const valorPremio = aposta.jogos.map((j) => (j.acertosFaixa && j.acertosFaixa.length > 0 ? j.acertosFaixa.map((f) => (f.valor || 0)).reduce((a, b) => a + b) : 0)).reduce((a, b) => a + b) || 0;
-    aposta.vlPremio = ((valorPremio / ((aposta.totalCotas || 0) === 0 ? 1 : aposta.totalCotas)) * aposta.cotas);
+    aposta.vlPremiado = ((valorPremio / ((aposta.totalCotas || 0) === 0 ? 1 : aposta.totalCotas)) * aposta.cotas);
+    aposta.premiado = ((jogosPremiados || 0) > 0);
     aposta.conferido = true;
     aposta.dtConferencia = new Date();
 
@@ -70,14 +70,14 @@ async function confereAposta(modalidadeId, apostaId, options = { atualiza: false
 
     // notification = { title = '', body = '', icon = '', url = '', actions = ''}
 
-    if (aposta.vlPremio > 0) {
+    if (aposta.vlPremiado > 0) {
       const notification = {
         title: 'Parabéns!',
-        body: `Sua aposta da ${modalidade.titulo} foi premiada. Valor ${(aposta.vlPremio || 0).toStringPrice()}.\nProcure uma agência da Caixa para verificar o valor exato do seu prêmio!`,
+        body: `Sua aposta da ${modalidade.titulo} foi premiada. Valor ${(aposta.vlPremiado || 0).toStringPrice()}.\nProcure uma agência da Caixa para verificar o valor exato do seu prêmio!`,
         icon: `${modalidade.codigo.toLowerCase()}.png`,
       };
       firebaseHelper.sendNotificationToUser(aposta.usuarioCotaId, notification);
-    } else if (jogosPremiados > 0) {
+    } else if (aposta.premiado) {
       const notification = {
         title: 'Parabéns!',
         body: `Sua aposta da ${modalidade.titulo} foi premiada, Valor não confirmado.\nProcure uma agência da Caixa para verificar o valor exato do seu prêmio!`,
@@ -281,9 +281,12 @@ exports.delete = async (req, res) => {
       res.status(200).json(new ResponseInfo(false, 'Id do Objeto não foi informado.'));
     } else {
       const data = await apostaRepository.get(req.params.id);
-      const valido = (req.headers && req.headers.usuarioId && data && req.headers.usuarioId.toString() === data.usuarioCotaId.toString());
+      const valido = (req.headers && req.headers.usuarioId && data && req.headers.usuarioId.toString() === data.usuarioId.toString());
       if (valido) {
         await apostaRepository.delete(data._id);
+        if (data.bolaoId) {
+          await bolaoRepository.delete(data.bolaoId);
+        }
         res.status(200).json(new ResponseInfo(true, `Id (${req.params.id}) Excluido com sucesso.`));
       } else {
         res.status(200).json(new ResponseInfo(false, `Id (${req.params.id}) não encontrato`));
