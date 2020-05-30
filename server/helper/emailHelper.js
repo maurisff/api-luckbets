@@ -60,9 +60,10 @@ exports.sendEmail = async (email) => {
     if (htmlBody) {
       mailOptions.html = htmlBody;
     }
+    // console.log('mailOptions: ', mailOptions);
     const info = await transporter.sendMail(mailOptions);
     console.log('Message sent: %s', info.messageId);
   } catch (error) {
-    console.log('Firebase.sendNotification - Error: ', error);
+    console.log('EmailHelper.sendEmail - Error: ', error);
   }
 };

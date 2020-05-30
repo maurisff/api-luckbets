@@ -98,9 +98,6 @@ async function enviaEmailBolao(bolaoId) {
     if (!bolao) {
       return;
     }
-    console.log('bolao:', bolao);
-    console.log('0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000');
-    console.log('bolaoJSON:', JSON.stringify(bolao));
     console.log('Enviando email Bolao ...');
     const modalidade = await modalidadeRepository.get(bolao.modalidadeId);
     if (!modalidade) {
