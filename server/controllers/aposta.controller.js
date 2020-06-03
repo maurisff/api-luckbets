@@ -127,7 +127,9 @@ async function enviaEmailBolao(bolaoId) {
     participantes.forEach(async (participante) => {
       const emailParticipantes = participantes.map((p) => ({ nome: p.nome, email: p.email })).filter((p) => p.email !== participante.email).map((p) => (p.nome && p.email ? `${p.nome} <${p.email}>` : `${p.email}`)); // remove o usuario que vai receber o email
 
-      const body = texto.replace('#PARTICIPANTE#', (participante.nome || 'Participante')).replace('#COTA#', (participante.cota || 1)).replace('#ARR_PARTICIPANTES#', emailParticipantes.join('\n'));
+      const body = texto.replace('#PARTICIPANTE#', (participante.nome || 'Participante'))
+        .replace('#COTA#', (participante.cota || 1))
+        .replace('#ARR_PARTICIPANTES#', emailParticipantes.join('\n'));
       // config = { from, to, cc, bcc, subject, body, htmlBody }
       const config = {
         from: `${usuarioBolao.nome && usuarioBolao.email ? `"${usuarioBolao.nome}" <${usuarioBolao.email}>` : `${usuarioBolao.email}`}`,
