@@ -23,7 +23,7 @@ exports.countByFilter = async (filter) => Model.countDocuments(filter);
 
 exports.selectByFilter = async (fields = null, filter = null) => Model.find((filter || {})).select((fields || {}));
 
-exports.ultimoResultado = async (modalidadeId) => Model.find({ modalidadeId })
+exports.ultimoResultado = async (modalidadeId) => Model.findOne({ modalidadeId })
   .select('-_id -premiacao._id -__v -updateAt -createdAt')
   .populate({
     path: 'modalidadeId',

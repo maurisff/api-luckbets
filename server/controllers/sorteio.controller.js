@@ -7,6 +7,7 @@ const acceptErrorsHttpStatus = [500, 503, 504];
 const axios = require('axios');
 const modalidadeRepository = require('../repositories/modalidade.repository');
 const sorteioRepository = require('../repositories/sorteio.repository');
+const apostaRepository = require('../repositories/aposta.repository');
 const ResponseInfo = require('../util/ResponseInfo');
 const globalEvents = require('../helper/globalEvents');
 
@@ -75,7 +76,7 @@ async function consultaSorteio(modalidadeId, options = {
             faixa: faixa.faixa,
             dezenas: faixa.dezenas,
             ganhadores: data[faixa.propGanhadoresFaixa] || 0,
-            valor: parseFloat(data[faixa.propValorFaixa] || 0),
+            valor: Number(data[faixa.propValorFaixa] || 0),
           });
         });
       }
@@ -86,7 +87,7 @@ async function consultaSorteio(modalidadeId, options = {
         resultado: (data[modalidade.propriedades.resultado] || '').replace(/\s+/g, '').split('-').map((d) => parseInt(d)),
         proximoConcurso: (data[modalidade.propriedades.concurso] + 1),
         proximaApuracao: (moment(data[modalidade.propriedades.dataProximo]).isValid() ? moment(data[modalidade.propriedades.dataProximo]) : null),
-        valorPrevisto: parseFloat(data[modalidade.propriedades.valorPrevisto]),
+        valorPrevisto: parseFloat((data[modalidade.propriedades.valorPrevisto] || '').toString().retornaNumeros()),
         premiacao,
       };
       let sorteio = null;
@@ -173,18 +174,28 @@ exports.postVerificaSorteio = async (req, res) => {
 
 exports.ultimosResultados = async (req, res) => {
   try {
+    const { usuarioId } = req.headers;
     const modalidades = await modalidadeRepository.listarTodos();
     const result = [];
     await global.util.asyncForEach(modalidades, async (modalidade) => {
       try {
         const sorteio = await sorteioRepository.ultimoResultado(modalidade._id);
-        if (sorteio) {
-          result.push(sorteio);
+        let serializedData = JSON.parse(JSON.stringify(sorteio)) || [];
+        if (usuarioId && sorteio) {
+          const aposta = await apostaRepository.getOne({ concurso: sorteio.concurso, usuarioCotaId: usuarioId, premiado: { $eq: true } });
+          if (aposta && aposta.premiado) {
+            serializedData = { ...serializedData, premiado: true };
+          }
+        }
+        if (serializedData) {
+
+          result.push(serializedData);
         }
       } catch (error) {
         console.error(`ultimosResultados - Modalidade (${modalidade.codigo}) error: `, error);
       }
     });
+    console.log(result);
     res.status(200).json(new ResponseInfo(true, result));
   } catch (error) {
     res.status(400).json(new ResponseInfo(false, error));
