@@ -98,7 +98,6 @@ async function enviaEmailBolao(bolaoId) {
     if (!bolao) {
       return;
     }
-    console.log('Enviando email Bolao ...');
     const modalidade = await modalidadeRepository.get(bolao.modalidadeId);
     if (!modalidade) {
       throw new Error(`modalidade não encontrada para o ID (${bolao.modalidadeId})`);

@@ -11,11 +11,6 @@ const apostaRepository = require('../repositories/aposta.repository');
 const ResponseInfo = require('../util/ResponseInfo');
 const globalEvents = require('../helper/globalEvents');
 
-/*
-globalEvents.on('novo-sorteio', (event) => {
-  // console.warn('onEvent-novo-sorteio: ', JSON.stringify(event));
-});
-*/
 async function eventEmitter(sorteio) {
   globalEvents.emit('novo-sorteio', sorteio);
 }
@@ -195,7 +190,7 @@ exports.ultimosResultados = async (req, res) => {
         console.error(`ultimosResultados - Modalidade (${modalidade.codigo}) error: `, error);
       }
     });
-    console.log(result);
+    // console.log(result);
     res.status(200).json(new ResponseInfo(true, result));
   } catch (error) {
     res.status(400).json(new ResponseInfo(false, error));

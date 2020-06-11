@@ -33,9 +33,7 @@ exports.create = async (req, res) => {
       res.status(200).json(new ResponseInfor(false, 'Objeto (Usuario) não é um objeto validado'));
     } else {
       let usuario = await usuarioRepo.create(await encrytPasswordUsuario(req.body));
-      console.log('ctrl.usuario.created: ', usuario);
       usuario = await processAllowedProps.execute(JSON.parse(JSON.stringify(usuario)), global.App.config.allowedPropsAuth);
-      console.log('ctrl.usuario.created2: ', usuario);
       res.status(200).json(new ResponseInfor(true, usuario));
     }
   } catch (error) {

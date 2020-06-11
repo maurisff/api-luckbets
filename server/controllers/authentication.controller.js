@@ -11,11 +11,6 @@ exports.registration = async (req, res) => {
   const {
     uid, nome, email, senha, messagingToken,
   } = req.body;
-  console.log('uid: ', uid);
-  console.log('nome: ', nome);
-  console.log('email: ', email);
-  console.log('senha: ', senha);
-  console.log('messagingToken: ', messagingToken);
   try {
     if (!nome) {
       res.status(200).json(new ResponseInfor(false, 'Nome do usuário não informado'));
@@ -117,7 +112,7 @@ exports.registration = async (req, res) => {
             boby: 'Sua conta de usuário foi criada com sucesso!',
           };
           firebaseHelper.sendNotificationToUser(newUser._id, message);
-          console.log('Message new Registretions sended!!');
+          // console.log('Message new Registretions sended!!');
         }, 10000);
       }
       res.status(200).json(new ResponseInfor(true, `Usuario (${newUser.nome}) cadastrado com sucesso!`));
@@ -125,7 +120,7 @@ exports.registration = async (req, res) => {
       if (!uid && currentUid) {
         firebaseAdmin.auth().deleteUser(currentUid);
       }
-      console.log('Error creating new user:', error);
+      console.error('Error creating new user:', error);
       res.status(500).json(new ResponseInfor(false, error));
     }
   } catch (error) {
@@ -169,7 +164,6 @@ exports.updateCreadential = async (req, res) => {
 
     try {
       const userAuth = await firebaseAdmin.auth().getUserByEmail(email);
-      console.log('Successfully firebaseAdmin.auth().getUserByEmail:', userAuth.toJSON());
       if (uid && userAuth && userAuth.uid !== uid) {
         res.status(200).json(new ResponseInfor(false, 'Já existe um usuário cadastrado com os dados informados'));
         return;
@@ -197,8 +191,6 @@ exports.updateCreadential = async (req, res) => {
       } else {
         userAuth = await firebaseAdmin.auth().createUser(newUserAuth);
       }
-      // See the UserRecord reference doc for the contents of userRecord.
-      console.log('Successfully firebaseAdmin.auth().createUser new user:', userAuth);
 
       const data = {
         uid: userAuth.uid,

@@ -56,7 +56,7 @@ exports.sendNotificationToUser = async (userId, notification) => {
         if (error.code === 'messaging/registration-token-not-registered') {
           repository.findeAndDelete({ token });
         } else {
-          console.log('Firebase.sendNotification.messaging().send - Error: ', error);
+          console.error('Firebase.sendNotification.messaging().send - Error: ', error);
         }
       });
     } else if (tokens && tokens.length > 0) {
@@ -70,10 +70,10 @@ exports.sendNotificationToUser = async (userId, notification) => {
           });
         }
       }).catch((error) => {
-        console.log('Firebase.sendNotification.messaging().sendMulticast - Error: ', error);
+        console.error('Firebase.sendNotification.messaging().sendMulticast - Error: ', error);
       });
     }
   } catch (error) {
-    console.log('Firebase.sendNotification - Error: ', error);
+    console.error('Firebase.sendNotification - Error: ', error);
   }
 };

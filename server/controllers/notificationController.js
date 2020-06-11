@@ -8,7 +8,6 @@ const ResponseInfor = require('../util/ResponseInfo');
 
 exports.sendNotification = async (req, res) => {
   try {
-    // console.log('req.boby', req.body);
     const { id, uid, message } = req.body;
     let usuario = null;
     if (id) {
@@ -23,7 +22,7 @@ exports.sendNotification = async (req, res) => {
     }
     res.status(200).json(new ResponseInfor(true, 'Mensagem enviada!'));
   } catch (error) {
-    console.log('sendNotification - Error: ', error);
+    console.error('sendNotification - Error: ', error);
     res.status(400).json(new ResponseInfor(false, error));
   }
 };

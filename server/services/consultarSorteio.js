@@ -47,7 +47,7 @@ async function verificaSorteio(id) {
     return;
   }
   if (!modadidade.proximaApuracao || moment().tz(tzLog).isSameOrAfter(moment(modadidade.proximaApuracao).tz(tzLog), 'day')) {
-    console.log(`${moment().tz(tzLog).format('DD/MM/YYYY HH:mm:ss')} - Consultando sorteio Modalidade "${modadidade.codigo}"...`);
+    // console.log(`${moment().tz(tzLog).format('DD/MM/YYYY HH:mm:ss')} - Consultando sorteio Modalidade "${modadidade.codigo}"...`);
     try {
       await controller.consultaSorteio(modadidade._id, { auto: true });
     } catch (error) {

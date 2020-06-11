@@ -31,7 +31,7 @@ async function schedulerAviso() {
 }
 
 async function notificaUsuarios() {
-  console.log(`${moment().tz(tzLog).format('DD/MM/YYYY HH:mm:ss')} - Notificando usuarios de sorteios...`);
+  // console.log(`${moment().tz(tzLog).format('DD/MM/YYYY HH:mm:ss')} - Notificando usuarios de sorteios...`);
   try {
     // await controller.consultaSorteio(modadidade._id, { auto: true });
   } catch (error) {
