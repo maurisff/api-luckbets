@@ -58,11 +58,11 @@ async function createModalida() {
       valorPrevisto: 'vr_estimativa',
     },
     style: {
-      corTitulo: '',
-      corBGDezena: '',
-      corTxtDezena: '',
+      corTitulo: '#209869',
+      corBGDezena: '#209869',
+      corTxtDezena: '#ffffff',
       corDefaulBGDezena: '',
-      corDefaulTxtDezena: '',
+      corDefaulTxtDezena: '#209869',
     },
   },
   {
@@ -114,11 +114,11 @@ async function createModalida() {
       valorPrevisto: 'vrEstimativa',
     },
     style: {
-      corTitulo: '',
-      corBGDezena: '',
-      corTxtDezena: '',
+      corTitulo: '#930089',
+      corBGDezena: '#930089',
+      corTxtDezena: '#ffffff',
       corDefaulBGDezena: '',
-      corDefaulTxtDezena: '',
+      corDefaulTxtDezena: '#930089',
     },
   },
   {
@@ -164,11 +164,11 @@ async function createModalida() {
       valorPrevisto: 'vrEstimado',
     },
     style: {
-      corTitulo: '',
-      corBGDezena: '',
-      corTxtDezena: '',
+      corTitulo: '#260085',
+      corBGDezena: '#260085',
+      corTxtDezena: '#ffffff',
       corDefaulBGDezena: '',
-      corDefaulTxtDezena: '',
+      corDefaulTxtDezena: '#260085',
     },
   }, {
     codigo: 'LOTOMANIA',
@@ -231,11 +231,11 @@ async function createModalida() {
       valorPrevisto: 'vrEstimativa',
     },
     style: {
-      corTitulo: '',
-      corBGDezena: '',
-      corTxtDezena: '',
+      corTitulo: '#f78100',
+      corBGDezena: '#f78100',
+      corTxtDezena: '#ffffff',
       corDefaulBGDezena: '',
-      corDefaulTxtDezena: '',
+      corDefaulTxtDezena: '#f78100',
     },
   }, {
     codigo: 'DIADESORTE',
@@ -280,11 +280,11 @@ async function createModalida() {
       valorPrevisto: 'vr_ESTIMATIVA',
     },
     style: {
-      corTitulo: '',
-      corBGDezena: '',
-      corTxtDezena: '',
+      corTitulo: '#cb852b',
+      corBGDezena: '#cb852b',
+      corTxtDezena: '#ffffff',
       corDefaulBGDezena: '',
-      corDefaulTxtDezena: '',
+      corDefaulTxtDezena: '#cb852b',
     },
   }];
   await global.util.asyncForEach(modalidades, async (doc) => {
