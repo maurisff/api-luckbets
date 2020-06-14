@@ -29,7 +29,7 @@ exports.postMessagingToken = async (req, res) => {
     res.status(200).json(new ResponseInfor(true, 'OK'));
   } catch (error) {
     console.error('postMessagingToken - Error: ', error);
-    res.status(500).json(new ResponseInfor(false, error));
+    res.status(500).json(new ResponseInfor(false, error.message));
   }
 };
 
@@ -47,6 +47,6 @@ exports.deleteMessagingToken = async (req, res) => {
     }
     res.status(200).json(new ResponseInfor(true, 'OK'));
   } catch (error) {
-    res.status(500).json(new ResponseInfor(false, error));
+    res.status(500).json(new ResponseInfor(false, error.message));
   }
 };

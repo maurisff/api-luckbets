@@ -25,6 +25,13 @@ const SchemaTabela = new Schema({
     type: Boolean,
     default: false,
   },
+  notificaSorteio: {
+    type: [{
+      type: String,
+      uppercase: true,
+      trim: true,
+    }],
+  },
   createdAt: {
     type: Date,
     default: Date.now,

@@ -23,6 +23,6 @@ exports.sendNotification = async (req, res) => {
     res.status(200).json(new ResponseInfor(true, 'Mensagem enviada!'));
   } catch (error) {
     console.error('sendNotification - Error: ', error);
-    res.status(400).json(new ResponseInfor(false, error));
+    res.status(400).json(new ResponseInfor(false, error.message));
   }
 };

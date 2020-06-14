@@ -15,7 +15,6 @@ async function eventEmitter(sorteio) {
   globalEvents.emit('novo-sorteio', sorteio);
 }
 
-
 async function consultaSorteio(modalidadeId, options = {
   auto: false, forceUpdate: false, ignoreErrors: false, forceConference: false, concurso: null,
 }) {
@@ -80,7 +79,7 @@ async function consultaSorteio(modalidadeId, options = {
         modalidadeId: modalidade._id,
         apuracao: (moment(data[modalidade.propriedades.dataConcurso]).isValid() ? moment(data[modalidade.propriedades.dataConcurso]) : null),
         resultado: (data[modalidade.propriedades.resultado] || '').replace(/\s+/g, '').split('-').map((d) => parseInt(d)),
-        proximoConcurso: (data[modalidade.propriedades.concurso] + 1),
+        proximoConcurso: (Number(data[modalidade.propriedades.concurso]) + 1),
         proximaApuracao: (moment(data[modalidade.propriedades.dataProximo]).isValid() ? moment(data[modalidade.propriedades.dataProximo]) : null),
         valorPrevisto: parseFloat((data[modalidade.propriedades.valorPrevisto] || '').toString().retornaNumeros()),
         premiacao,
@@ -102,7 +101,7 @@ async function consultaSorteio(modalidadeId, options = {
       }
       if (!modalidade.proximoConcurso || (resultado.concurso >= modalidade.proximoConcurso)) {
         modalidade.ultimoConcurso = resultado.concurso;
-        modalidade.proximoConcurso = (resultado.concurso + 1);
+        modalidade.proximoConcurso = (Number(resultado.concurso) + 1);
         modalidade.ultimaApuracao = resultado.apuracao;
         modalidade.proximaApuracao = resultado.proximaApuracao;
         await modalidadeRepository.update(modalidade._id, modalidade);
@@ -183,7 +182,6 @@ exports.ultimosResultados = async (req, res) => {
           }
         }
         if (serializedData) {
-
           result.push(serializedData);
         }
       } catch (error) {
@@ -269,7 +267,8 @@ exports.resultadoModalidade = async (req, res) => {
 
 exports.semSorteio = async (req, res) => {
   try {
-    const { codigo } = req.body;
+    const { codigo = '' } = req.query;
+    console.log('CODIGO: ', codigo);
 
     const modalidade = await modalidadeRepository.getOne({ codigo: codigo.toUpperCase() });
     if (!modalidade) {
@@ -289,8 +288,9 @@ exports.semSorteio = async (req, res) => {
         pendentes.push(i);
       }
     }
-    res.status(200).json(await pendentes.join(','));
+
+    res.status(200).json(new ResponseInfo(true, pendentes.join(',')));
   } catch (error) {
-    res.status(400).json(new ResponseInfo(false, error));
+    res.status(400).json(new ResponseInfo(false, error.message));
   }
 };

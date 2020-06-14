@@ -7,13 +7,6 @@ const ResponseInfor = require('../util/ResponseInfo');
 const processAllowedProps = require('../helper/processAllowedProps');
 
 
-async function processErro(erro) {
-  if (erro.name === 'MongoError') {
-    return new ResponseInfor(false, erro.errmsg);
-  }
-  return new ResponseInfor(false, erro);
-}
-
 async function encrytPasswordUsuario(usuario, id = null) {
   if (usuario.senha) {
     const userId = id || usuario._id;
@@ -37,7 +30,7 @@ exports.create = async (req, res) => {
       res.status(200).json(new ResponseInfor(true, usuario));
     }
   } catch (error) {
-    res.status(200).json(new ResponseInfor(false, error));
+    res.status(200).json(new ResponseInfor(false, error.message));
   }
 };
 
@@ -60,7 +53,7 @@ exports.update = async (req, res) => {
     }
   } catch (error) {
     console.error('usuario.controller.update: ', error);
-    res.status(200).json(new ResponseInfor(false, error));
+    res.status(200).json(new ResponseInfor(false, error.message));
   }
 };
 
@@ -78,7 +71,7 @@ exports.get = async (req, res) => {
       }
     }
   } catch (error) {
-    res.status(200).json(new ResponseInfor(false, error));
+    res.status(200).json(new ResponseInfor(false, error.message));
   }
 };
 
@@ -91,7 +84,7 @@ exports.delete = async (req, res) => {
       res.status(200).json(new ResponseInfor(true, `Objeto (Usuario), Id (${req.params.id}) Excluido com sucesso.`));
     }
   } catch (error) {
-    res.status(200).json(new ResponseInfor(false, error));
+    res.status(200).json(new ResponseInfor(false, error.message));
   }
 };
 
@@ -106,7 +99,7 @@ exports.list = async (req, res) => {
     usuarios = await processAllowedProps.execute(JSON.parse(JSON.stringify(usuarios)), global.App.config.allowedPropsAuth);
     res.status(200).json(new ResponseInfor(true, usuarios));
   } catch (error) {
-    res.status(200).json(new ResponseInfor(false, error));
+    res.status(200).json(new ResponseInfor(false, error.message));
   }
 };
 
@@ -124,6 +117,38 @@ exports.usuarioLogado = async (req, res) => {
     } */
     res.status(200).json(new ResponseInfor(true, usuario));
   } catch (error) {
-    res.status(500).json(new ResponseInfor(false, error));
+    res.status(500).json(new ResponseInfor(false, error.message));
+  }
+};
+
+
+exports.upateUsuarioLogado = async (req, res) => {
+  try {
+    const { usuarioId } = req.headers;
+    if (!usuarioId) {
+      res.status(401).json(new ResponseInfor(false, 'Não foi possível identificar o usuário logado!'));
+      return;
+    }
+    const usuario = await usuarioRepo.get(usuarioId);
+    const { nome, email, notificaSorteio = [] } = req.body;
+    const data = {};
+    if (usuario.nome !== nome) {
+      data.nome = nome;
+    }
+    if (usuario.email !== email) {
+      data.email = email;
+    }
+    if (usuario.notificaSorteio !== notificaSorteio) {
+      const n1 = (usuario.notificaSorteio || []).sort();
+      const n2 = (notificaSorteio || []).sort();
+      if (JSON.stringify(n1) !== JSON.stringify(n2)) {
+        data.notificaSorteio = n2;
+      }
+    }
+    const serealized = await usuarioRepo.update(usuarioId, data);
+    res.status(200).json(new ResponseInfor(true, serealized));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(new ResponseInfor(false, error.message));
   }
 };

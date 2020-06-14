@@ -12,7 +12,7 @@ exports.create = async (req, res) => {
       res.status(200).json(new ResponseInfor(true, data));
     }
   } catch (error) {
-    res.status(500).json(new ResponseInfor(false, error));
+    res.status(500).json(new ResponseInfor(false, error.message));
   }
 };
 
@@ -33,7 +33,7 @@ exports.update = async (req, res) => {
       }
     }
   } catch (error) {
-    res.status(500).json(new ResponseInfor(false, error));
+    res.status(500).json(new ResponseInfor(false, error.message));
   }
 };
 
@@ -50,7 +50,7 @@ exports.get = async (req, res) => {
       }
     }
   } catch (error) {
-    res.status(500).json(new ResponseInfor(false, error));
+    res.status(500).json(new ResponseInfor(false, error.message));
   }
 };
 
@@ -63,7 +63,7 @@ exports.delete = async (req, res) => {
       res.status(200).json(new ResponseInfor(true, `Id (${req.params.id}) Excluido com sucesso.`));
     }
   } catch (error) {
-    res.status(500).json(new ResponseInfor(false, error));
+    res.status(500).json(new ResponseInfor(false, error.message));
   }
 };
 
@@ -77,6 +77,6 @@ exports.list = async (req, res) => {
     }
     res.status(200).json(new ResponseInfor(true, result));
   } catch (error) {
-    res.status(500).json(new ResponseInfor(false, error));
+    res.status(500).json(new ResponseInfor(false, error.message));
   }
 };

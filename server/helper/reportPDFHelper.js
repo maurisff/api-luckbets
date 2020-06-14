@@ -29,7 +29,7 @@ exports.reportDataToPDFResponse = async function (res, data, filename) {
     doc.pipe(res);
     await processaDocumento(doc, data);
   } catch (error) {
-    res.status(200).json(new ResponseInfor(false, error));
+    res.status(200).json(new ResponseInfor(false, error.message));
   }
 };
 
@@ -51,7 +51,7 @@ exports.reportDataToPDFBase64 = async function (res, data, filename) {
       res.status(200).json(new ResponseInfor(true, finalString));
     });
   } catch (error) {
-    res.status(200).json(new ResponseInfor(false, error));
+    res.status(200).json(new ResponseInfor(false, error.message));
   }
 };
 

@@ -21,7 +21,7 @@ exports.update = async (req, res) => {
     }
   } catch (error) {
     console.error('modalidade.controller.update: ', error);
-    res.status(200).json(new ResponseInfor(false, error));
+    res.status(200).json(new ResponseInfor(false, error.message));
   }
 };
 
@@ -35,6 +35,6 @@ exports.list = async (req, res) => {
     }
     res.status(200).json(new ResponseInfor(true, modalidades));
   } catch (error) {
-    res.status(200).json(new ResponseInfor(false, error));
+    res.status(200).json(new ResponseInfor(false, error.message));
   }
 };

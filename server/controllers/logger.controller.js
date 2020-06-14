@@ -11,7 +11,7 @@ exports.list = async (req, res) => {
     result = await repository.selectByFilter({}, req.query);
     res.status(200).json(new ResponseInfor(true, result));
   } catch (error) {
-    res.status(400).json(new ResponseInfor(false, error));
+    res.status(400).json(new ResponseInfor(false, error.message));
   }
 };
 
@@ -28,6 +28,6 @@ exports.create = async (req, res) => {
     });
     res.status(200).json(new ResponseInfor(true, 'ok'));
   } catch (error) {
-    res.status(400).json(new ResponseInfor(false, error));
+    res.status(400).json(new ResponseInfor(false, error.message));
   }
 };

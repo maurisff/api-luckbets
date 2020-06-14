@@ -56,7 +56,7 @@ exports.registration = async (req, res) => {
     } catch (error) {
       if (['auth/user-not-found'].indexOf(error.code) === -1) {
         // console.log('Error firebaseAdmin.auth().getUserByEmail:', error);
-        res.status(500).json(new ResponseInfor(false, error));
+        res.status(500).json(new ResponseInfor(false, error.message));
         return;
       }
     }
@@ -121,10 +121,10 @@ exports.registration = async (req, res) => {
         firebaseAdmin.auth().deleteUser(currentUid);
       }
       console.error('Error creating new user:', error);
-      res.status(500).json(new ResponseInfor(false, error));
+      res.status(500).json(new ResponseInfor(false, error.message));
     }
   } catch (error) {
-    res.status(500).json(new ResponseInfor(false, error));
+    res.status(500).json(new ResponseInfor(false, error.message));
   }
 };
 
@@ -173,7 +173,7 @@ exports.updateCreadential = async (req, res) => {
       }
     } catch (error) {
       console.log('Error firebaseAdmin.auth().getUserByEmail:', error);
-      res.status(500).json(new ResponseInfor(false, error));
+      res.status(500).json(new ResponseInfor(false, error.message));
       return;
     }
 
@@ -207,10 +207,10 @@ exports.updateCreadential = async (req, res) => {
       res.status(200).json(new ResponseInfor(true, `Usuario (${newUser.nome}) cadastrado com sucesso!`));
     } catch (error) {
       console.log('Error creating new user:', error);
-      res.status(500).json(new ResponseInfor(false, error));
+      res.status(500).json(new ResponseInfor(false, error.message));
     }
   } catch (error) {
-    res.status(500).json(new ResponseInfor(false, error));
+    res.status(500).json(new ResponseInfor(false, error.message));
   }
 };
 /*
@@ -237,7 +237,7 @@ exports.check = async (req, res) => {
       }
     }
   } catch (error) {
-    res.status(400).json(new ResponseInfor(false, error));
+    res.status(400).json(new ResponseInfor(false, error.message));
   }
 };
 

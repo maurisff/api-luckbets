@@ -25,6 +25,9 @@ module.exports = {
 };
 
 async function schedulerModalidade(modalidade, delay = 1) {
+  setTimeout(() => {
+    verificaSorteio(modalidade._id);
+  }, (3000 * delay));
   // Test expression: https://cronjob.xyz/
   const cronTime = (process.env.TIME_SCHEDULER_SORTEIO ? process.env.TIME_SCHEDULER_SORTEIO : '*/30 20-23 * * 1-6'); // default cada 30 minutos, das 20 hrs até as 23:59, de segunda a sabado
   // ================================================================================================================================

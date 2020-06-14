@@ -11,5 +11,6 @@ module.exports = (app) => {
     .delete(usuarioController.delete);
 
   app.route('/usuariologado/usuario')
-    .get(usuarioController.usuarioLogado);
+    .get(usuarioController.usuarioLogado)
+    .put(usuarioController.upateUsuarioLogado);
 };
