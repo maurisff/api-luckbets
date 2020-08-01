@@ -4,6 +4,9 @@ module.exports = (app) => {
   app.route('/sorteios/ultimosresultados')
     .get(sorteioController.ultimosResultados);
 
+  app.route('/sorteios/ultimoresultado/:codigo')
+    .get(sorteioController.ultimoResultado);
+
   app.route('/sorteios/:codigo/resultado')
     .get(sorteioController.resultadoModalidade);
 

@@ -27,6 +27,7 @@ const SchemaTabela = new Schema({
         type: Number,
         default: 1,
       },
+      valorCusto: Number,
       acertos: Number,
       dezenasConferidas: {
         type: [Number],

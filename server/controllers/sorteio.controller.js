@@ -195,6 +195,18 @@ exports.ultimosResultados = async (req, res) => {
   }
 };
 
+exports.ultimoResultado = async (req, res) => {
+  try {
+    const { codigo } = req.params;
+    const modalidade = await modalidadeRepository.getOne({ codigo });
+    const sorteio = await sorteioRepository.ultimoResultado(modalidade._id);
+    // console.log(result);
+    res.status(200).json(new ResponseInfo(true, sorteio));
+  } catch (error) {
+    res.status(400).json(new ResponseInfo(false, error.message));
+  }
+};
+
 exports.resultadoModalidade = async (req, res) => {
   try {
     const { codigo } = req.params;

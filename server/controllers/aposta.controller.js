@@ -161,6 +161,7 @@ exports.create = async (req, res) => {
     } = req.body;
     const { participantes } = bolao || {};
     let Bolao = null;
+    let vlCustoAposta = 0;
     const Modalidade = await modalidadeRepository.getOne({ codigo: modalidade.toString() });
     if (!Modalidade) {
       res.status(200).json(new ResponseInfo(false, `Modalidade (${modalidade}) não cadastrada!`));
@@ -227,9 +228,13 @@ exports.create = async (req, res) => {
     const arrayJogos = [];
     try {
       await global.util.asyncForEach(jogos, async (jogo) => {
-        let { dezenas, cota = 1, cotas = 1 } = jogo;
+        let {
+          dezenas, cota = 1, cotas = 1, valorCusto,
+        } = jogo;
         cota = parseInt(cota) || 1;
         cotas = parseInt(cotas) || 1;
+        valorCusto = valorCusto && !isNaN(valorCusto) && Number(valorCusto) > 0 ? Number(valorCusto) : null;
+
         if (!dezenas || !Array.isArray(dezenas) || dezenas.length === 0) {
           throw new Error('Não foi possivel identificar as dezenas do jogo.');
         }
@@ -251,7 +256,12 @@ exports.create = async (req, res) => {
         if (!(tempMaxDez <= Modalidade.dezenas)) {
           throw new Error(`A dezena ${tempMaxDez} inválida. Dezenas deve estar entre 1 e ${Modalidade.dezenas}`);
         }
-        arrayJogos.push({ dezenas, cota, cotas });
+        if (valorCusto) {
+          vlCustoAposta += valorCusto;
+        }
+        arrayJogos.push({
+          dezenas, cota, cotas, valorCusto,
+        });
       });
     } catch (error) {
       res.status(200).json(new ResponseInfo(false, error.message));
@@ -268,6 +278,7 @@ exports.create = async (req, res) => {
           jogos: arrayJogos,
           cotas: participante.cota,
           totalCotas,
+          vlCustoAposta,
           usuarioCotaId: participante.participante,
           usuarioId: req.headers.usuarioId,
           bolaoId,
@@ -416,10 +427,18 @@ exports.list = async (req, res) => {
       limit: rowsPage,
       skip: (((page - 1) * rowsPage)),
     };
-    const result = await apostaRepository.apostasUsuario(modalidade._id, usuarioId, options);
+    const apostas = await apostaRepository.apostasUsuario(modalidade._id, usuarioId, options);
+    const concuros = apostas.map((m) => (m.concurso === 1 ? m.concurso : m.concurso - 1));
+    const sorteios = await sorteioRepository.listarByFilter({ modalidadeId: modalidade._id, concurso: { $in: concuros } });
+
+    const result = apostas.map((m) => ({
+      apuracao: (sorteios.find((f) => f.concurso === (m.concurso === 1 ? m.concurso : m.concurso - 1)) || {}).proximaApuracao,
+      premioPrevisto: (sorteios.find((f) => f.concurso === (m.concurso === 1 ? m.concurso : m.concurso - 1)) || {}).valorPrevisto,
+      ...JSON.parse(JSON.stringify(m)),
+    }));
     res.status(200).json(new ResponseInfo(true, result, pagination));
   } catch (error) {
-    res.status(500).json(new ResponseInfo(false, error));
+    res.status(500).json(new ResponseInfo(false, error.message));
   }
 };
 
