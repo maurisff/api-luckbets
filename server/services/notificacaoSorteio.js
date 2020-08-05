@@ -6,10 +6,10 @@ const mongoose = require('mongoose');
 const moment = require('moment-timezone');
 const firebaseHelper = require('../helper/firebase');
 const sorteioRepository = require('../repositories/sorteio.repository');
+const apostaRepository = require('../repositories/aposta.repository');
 
 const ModalidadeModel = mongoose.model('Modalidade');
 const UsuarioModel = mongoose.model('Usuario');
-const ApostaModel = mongoose.model('Aposta');
 const tzLog = process.env.TZSERVER || 'America/Sao_Paulo';
 
 
@@ -23,7 +23,15 @@ async function notificaUsuarios(modalidade, concurso) {
     if (!usuarios || usuarios.length === 0) {
       return;
     }
-    const usuariosFiltrados = usuarios.filter(async (f) => !await ApostaModel.findOne({ usuarioCotaId: f._id, modalidadeId: modalidade._id, proximoConcurso: concurso }));
+    const usuariosFiltrados = [];
+    await global.util.asyncForEach(usuarios, async (u) => {
+      const count = await apostaRepository.countByFilter(modalidade._id, u._id, { concurso });
+      // criar regra pra validar se o usuario optou pela ação de não jogar hoje.
+      if (count === 0) {
+        usuariosFiltrados.push(u);
+      }
+    });
+
     if (!usuariosFiltrados || usuariosFiltrados.length === 0) {
       return;
     }
