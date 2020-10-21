@@ -1,7 +1,5 @@
 /* eslint-disable radix */
 
-const moment = require('moment-timezone');
-
 const successHttpStatus = [200, 201, 202, 203, 204, 205, 206, 207, 208];
 const acceptErrorsHttpStatus = [500, 503, 504];
 const axios = require('axios');
@@ -64,28 +62,6 @@ async function consultaSorteio(modalidadeId, options = {
     }
 
     if (data) {
-      /* const premiacao = [];
-      if (modalidade && modalidade.faixaPremio) {
-        await global.util.asyncForEach(modalidade.faixaPremio, async (faixa) => {
-          premiacao.push({
-            faixa: faixa.faixa,
-            dezenas: faixa.dezenas,
-            ganhadores: data[faixa.propGanhadoresFaixa] || 0,
-            valor: Number(data[faixa.propValorFaixa] || 0),
-          });
-        });
-      }
-      const resultado = {
-        concurso: data[modalidade.propriedades.concurso],
-        modalidadeId: modalidade._id,
-        apuracao: (moment(data[modalidade.propriedades.dataConcurso]).isValid() ? moment(data[modalidade.propriedades.dataConcurso]) : null),
-        resultado: (data[modalidade.propriedades.resultado] || '').replace(/\s+/g, '').split('-').map((d) => parseInt(d)),
-        proximoConcurso: (Number(data[modalidade.propriedades.concurso]) + 1),
-        proximaApuracao: (moment(data[modalidade.propriedades.dataProximo]).isValid() ? moment(data[modalidade.propriedades.dataProximo]) : null),
-        valorPrevisto: parseFloat((data[modalidade.propriedades.valorPrevisto] || '').toString().retornaNumeros()),
-        premiacao,
-      };
-      */
       const resultado = await processResponseSorteio.processResponse(modalidade, data);
       let sorteio = null;
       try {
@@ -93,8 +69,7 @@ async function consultaSorteio(modalidadeId, options = {
       } catch (error) {
         sorteio = null;
       }
-      console.warn(`Modadelidade (${modalidade.codigo}) - resultado: `, resultado);
-      console.warn(`Modadelidade (${modalidade.codigo}) - JSON resultado: `, JSON.stringify(resultado));
+
       if (!sorteio) {
         await sorteioRepository.create(resultado);
         notifica = { concurso: resultado.concurso, modalidadeId: resultado.modalidadeId };
