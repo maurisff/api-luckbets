@@ -10,6 +10,7 @@ const sorteioRepository = require('../repositories/sorteio.repository');
 const apostaRepository = require('../repositories/aposta.repository');
 const ResponseInfo = require('../util/ResponseInfo');
 const globalEvents = require('../helper/globalEvents');
+const processResponseSorteio = require('../services/processResponseSorteio');
 
 async function eventEmitter(sorteio) {
   globalEvents.emit('novo-sorteio', sorteio);
@@ -63,7 +64,7 @@ async function consultaSorteio(modalidadeId, options = {
     }
 
     if (data) {
-      const premiacao = [];
+      /* const premiacao = [];
       if (modalidade && modalidade.faixaPremio) {
         await global.util.asyncForEach(modalidade.faixaPremio, async (faixa) => {
           premiacao.push({
@@ -84,14 +85,16 @@ async function consultaSorteio(modalidadeId, options = {
         valorPrevisto: parseFloat((data[modalidade.propriedades.valorPrevisto] || '').toString().retornaNumeros()),
         premiacao,
       };
+      */
+      const resultado = await processResponseSorteio.processResponse(modalidade, data);
       let sorteio = null;
       try {
         sorteio = await sorteioRepository.getOne({ concurso: resultado.concurso, modalidadeId: resultado.modalidadeId });
       } catch (error) {
         sorteio = null;
       }
-      // console.warn(`Modadelidade (${modalidade.codigo}) - resultado: `, resultado);
-      // console.warn(`Modadelidade (${modalidade.codigo}) - JSON resultado: `, JSON.stringify(resultado));
+      console.warn(`Modadelidade (${modalidade.codigo}) - resultado: `, resultado);
+      console.warn(`Modadelidade (${modalidade.codigo}) - JSON resultado: `, JSON.stringify(resultado));
       if (!sorteio) {
         await sorteioRepository.create(resultado);
         notifica = { concurso: resultado.concurso, modalidadeId: resultado.modalidadeId };

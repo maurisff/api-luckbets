@@ -35,14 +35,23 @@ async function notificaUsuarios(modalidade, concurso) {
     if (!usuariosFiltrados || usuariosFiltrados.length === 0) {
       return;
     }
-
+    const actions = [
+      {
+        action: 'IGNORAR_SORTEIO',
+        title: 'Ignorar Sorteio!',
+        actionURL: 'server',
+        // icon: '/demos/notification-examples/images/action-1-128x128.png'
+      },
+    ];
     const notificacoes = usuariosFiltrados.map((u) => ({
       usuarioId: u._id,
       notification: {
         title: 'Hoje tem Sorteio!',
         body: `Olá ${(u.nome ? u.nome.split(' ')[0] : u.email)}, Hoje tem sorteio do concurso ${concurso} da ${modalidade.titulo}.\nNão se esqueça de fazer sua aposta!`,
         icon: `${modalidade.codigo.toLowerCase()}.png`,
+        url: `/volante/${modalidade.codigo.toLowerCase()}/apostar`,
         /** Implemenatr action para ignorar proxima notificações. */
+        actions: JSON.stringify(actions),
       },
     }));
 
@@ -78,7 +87,7 @@ async function verificaSorteioModalidade(modalidade) {
 
 
 async function schedulerAviso(modalidade) {
-  // await verificaSorteioModalidade(modalidade);
+  await verificaSorteioModalidade(modalidade);
   // Test expression: https://cronjob.xyz/
   const cronTime = (process.env.TIME_SCHEDULER_AVISOSORTEIO ? process.env.TIME_SCHEDULER_AVISOSORTEIO : '0 08,18 * * 1-6'); // default 1 vez as 08 e as 18 horas de segunda a sabado
   // ================================================================================================================================
