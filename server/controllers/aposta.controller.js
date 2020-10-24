@@ -179,10 +179,10 @@ exports.create = async (req, res) => {
       res.status(200).json(new ResponseInfo(false, 'Participantes invalidos!'));
       return;
     }
-    concursos.push(concurso);
-    if (teimosinha && teimosinha > 0) {
-      for (let i = 1; i < teimosinha; i++) {
-        concursos.push((concurso + i));
+    concursos.push(Number(concurso));
+    if (teimosinha && Number(teimosinha) > 0) {
+      for (let i = 1; i < Number(teimosinha); i++) {
+        concursos.push((Number(concurso) + i));
       }
     }
 
