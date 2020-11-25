@@ -7,6 +7,7 @@ const moment = require('moment-timezone');
 const firebaseHelper = require('../helper/firebase');
 const sorteioRepository = require('../repositories/sorteio.repository');
 const apostaRepository = require('../repositories/aposta.repository');
+const sorteioIgnoradoRepository = require('../repositories/sorteioIgnorado.repository');
 
 const ModalidadeModel = mongoose.model('Modalidade');
 const UsuarioModel = mongoose.model('Usuario');
@@ -25,24 +26,19 @@ async function notificaUsuarios(modalidade, concurso) {
     }
     const usuariosFiltrados = [];
     await global.util.asyncForEach(usuarios, async (u) => {
-      const count = await apostaRepository.countByFilter(modalidade._id, u._id, { concurso });
+      const countIgnorados = await sorteioIgnoradoRepository.countIgnorados(modalidade._id, u._id, concurso);
       // criar regra pra validar se o usuario optou pela ação de não jogar hoje.
-      if (count === 0) {
-        usuariosFiltrados.push(u);
+      if (Number(countIgnorados) === 0) {
+        const count = await apostaRepository.countByFilter(modalidade._id, u._id, { concurso });
+        if (Number(count) === 0) {
+          usuariosFiltrados.push(u);
+        }
       }
     });
 
     if (!usuariosFiltrados || usuariosFiltrados.length === 0) {
       return;
     }
-    const actions = [
-      {
-        action: 'IGNORAR_SORTEIO',
-        title: 'Ignorar Sorteio!',
-        actionURL: 'server',
-        // icon: '/demos/notification-examples/images/action-1-128x128.png'
-      },
-    ];
     const notificacoes = usuariosFiltrados.map((u) => ({
       usuarioId: u._id,
       notification: {
@@ -51,7 +47,12 @@ async function notificaUsuarios(modalidade, concurso) {
         icon: `${modalidade.codigo.toLowerCase()}.png`,
         url: `/volante/${modalidade.codigo.toLowerCase()}/apostar`,
         /** Implemenatr action para ignorar proxima notificações. */
-        actions: JSON.stringify(actions),
+        actions: JSON.stringify([{
+          action: 'IGNORAR_SORTEIO',
+          title: 'Ignorar Sorteio!',
+          actionURL: `${process.env.API_HOST || `http://localhost:${process.env.PORT || process.env.API_PORT || 4000}`}/api/notification/ignorar-sorteio/${modalidade.codigo}/${concurso}/${u._id}`,
+          // icon: '/demos/notification-examples/images/action-1-128x128.png'
+        }]),
       },
     }));
 

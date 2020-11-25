@@ -15,5 +15,6 @@ module.exports = {
     '/authentication/user/list',
     '/authentication/user/find',
     '/pagina/checkUpdateAll',
-    '/logclientprovider/logger'],
+    '/logclientprovider/logger',
+  ],
 };
